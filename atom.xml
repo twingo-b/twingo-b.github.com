@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[My Octopress Blog]]></title>
+  <title><![CDATA[twingo_bのメモ]]></title>
   <link href="http://twingo-b.github.com/atom.xml" rel="self"/>
   <link href="http://twingo-b.github.com/"/>
-  <updated>2012-09-28T12:49:17+09:00</updated>
+  <updated>2012-09-28T16:25:51+09:00</updated>
   <id>http://twingo-b.github.com/</id>
   <author>
-    <name><![CDATA[Your Name]]></name>
+    <name><![CDATA[twingo_b]]></name>
     
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
