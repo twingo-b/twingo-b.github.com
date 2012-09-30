@@ -181,7 +181,7 @@ post.dist:
 BUILD SUCCESSFUL
 
 ```
-`dist`ディレクトリ以下にできたzipファイル`ocal.twingob.android.tideploygate-android-0.1.zip`をTitanium Mobileプロジェクト直下にコピーします。
+`dist`ディレクトリ以下にできたzipファイル`local.twingob.android.tideploygate-android-0.1.zip`をTitanium Mobileプロジェクト直下にコピーします。
 
 ### tiapp.xmlの修正
 moduleの指定を追加します。リモートLogCatを利用する場合は、`<uses-permission android:name="android.permission.READ_LOGS" />`も記載します。
