@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Titanium | twingo_b's blog]]></title>
   <link href="http://twingo-b.github.com/blog/categories/titanium/atom.xml" rel="self"/>
   <link href="http://twingo-b.github.com/"/>
-  <updated>2012-10-01T00:24:32+09:00</updated>
+  <updated>2012-10-01T00:48:08+09:00</updated>
   <id>http://twingo-b.github.com/</id>
   <author>
     <name><![CDATA[@twingo_b]]></name>
@@ -341,7 +341,7 @@ zip.libs:</p>
 <p>BUILD SUCCESSFUL</p>
 
 <p><code>``
-</code>dist<code>ディレクトリ以下にできたzipファイル</code>ocal.twingob.android.tideploygate-android-0.1.zip`をTitanium Mobileプロジェクト直下にコピーします。</p>
+</code>dist<code>ディレクトリ以下にできたzipファイル</code>local.twingob.android.tideploygate-android-0.1.zip`をTitanium Mobileプロジェクト直下にコピーします。</p>
 
 <h3>tiapp.xmlの修正</h3>
 
