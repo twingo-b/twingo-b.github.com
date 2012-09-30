@@ -3,9 +3,9 @@
 # ----------------------- #
 
 url: http://twingo-b.github.com
-title: twingo_bのメモ
-subtitle: 
-author: twingo_b
+title: "twingo_b's blog"
+subtitle: "memo"
+author: "@twingo_b"
 simple_search: http://google.com/search
 description:
 
@@ -96,4 +96,4 @@ disqus_show_comment_count: false
 google_analytics_tracking_id:
 
 # Facebook Like
-facebook_like: false
+facebook_like: true
