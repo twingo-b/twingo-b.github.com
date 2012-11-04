@@ -9,7 +9,8 @@
   <meta name="author" content="@twingo_b">
 
   
-  <meta name="description" content="@astronaughtsさんから依頼を受け、moduleを作成したところ、ひと通りうまく動作しました＾＾。 検証中にちょっとハマったところがあり、@DeployGate_jaさんにドキュメントの改善要望をお問い合わせしました。 その後、こんなお話をいただいたので、 &hellip;">
+  <meta name="description" content="Titanium mobile &#8220;early&#8221; Advent Calendar 2012用小ネタです。
+@astronaughtsさんが困ってたので、他の方ももしかしたらハマるかなと＾＾； 開発環境はMacで、shellはzshを利用しています。 Andorid SDK、 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -64,6 +65,86 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/11/04/maketi/">MakeTiをAndroidで利用する</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-04T00:00:00+09:00" pubdate data-updated="true">Nov 4<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a href="http://atnd.org/events/33731">Titanium mobile &#8220;early&#8221; Advent Calendar 2012</a>用小ネタです。
+<a href="https://twitter.com/astronaughts">@astronaughts</a>さんが困ってたので、他の方ももしかしたらハマるかなと＾＾；</p>
+
+<p>開発環境はMacで、shellはzshを利用しています。</p>
+
+<p><a href="http://developer.android.com/sdk/index.html">Andorid SDK</a>、<a href="http://www.appcelerator.com/platform/titanium-studio/">Titanium Studio</a>で必要なものはインストール済みの前提です。</p>
+
+<p><a href="https://github.com/astronaughts/MakeTi">MakeTi</a>は@astronaughtsさんのgithubからcloneしてます。</p>
+
+<p>MakeFileはAndroid SDKが$HOME直下にAndroidというディレクトリ名で存在することが前提で書かれています。
+必要なファイル、ディレクトリにシンボリックリンクを貼って動くようにします。</p>
+
+<div><script src='https://gist.github.com/4011292.js?file='></script>
+<noscript><pre><code>mkdir -p ~/source
+cd ~/source
+git clone git://github.com/astronaughts/MakeTi.git MakeTi
+
+ln -s ~/source/MakeTi/bin ~/path/to/[your titanium mobile Project]/bin
+ln -s ~/source/MakeTi/Makefile ~/path/to/[your Titanium Mobile Project]/Makefile
+
+# $HOME以下にandroid-sdk-macosxが配置されていることが前提
+ln -s ~/android-sdk-macosx ~/Android
+</code></pre></noscript></div>
+
+
+<p>それでは、実際に動かしてみましょう！</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>cd ~/path/to/[your titanium mobile Project]
+</span><span class='line'>make clean && make deploy platform=android</span></code></pre></td></tr></table></div></figure>
+
+
+<p>こんな感じで実機へのインストールがコマンドで実行できます。</p>
+
+<h2>うまく動かなかった方へ。</h2>
+
+<p>私みたいに2.0以前のTitanium Mobile SDKを利用していた方は、古いSDKを移動しておく必要があります。MakeTiが誤検知しちゃいますので。
+SDKのインストール先が2.0から$HOME/Library/Application Support/Titaniumへ移動した影響ですねー。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo mv /Library/Application\ Support/Titanium /Library/Application\ Support/Titanium_OLD</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ではでは〜。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -517,6 +598,10 @@ deploygate.refresh();
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/11/04/maketi/">MakeTiをAndroidで利用する</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2012/10/01/tideploygate/">Titanium MobileでDeployGateを利用する</a>

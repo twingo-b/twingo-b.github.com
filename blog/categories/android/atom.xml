@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | twingo_b's blog]]></title>
   <link href="http://twingo-b.github.com/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://twingo-b.github.com/"/>
-  <updated>2012-10-01T00:48:08+09:00</updated>
+  <updated>2012-11-04T20:06:54+09:00</updated>
   <id>http://twingo-b.github.com/</id>
   <author>
     <name><![CDATA[@twingo_b]]></name>
@@ -12,6 +12,55 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[MakeTiをAndroidで利用する]]></title>
+    <link href="http://twingo-b.github.com/blog/2012/11/04/maketi/"/>
+    <updated>2012-11-04T00:00:00+09:00</updated>
+    <id>http://twingo-b.github.com/blog/2012/11/04/maketi</id>
+    <content type="html"><![CDATA[<p><a href="http://atnd.org/events/33731">Titanium mobile "early" Advent Calendar 2012</a>用小ネタです。
+<a href="https://twitter.com/astronaughts">@astronaughts</a>さんが困ってたので、他の方ももしかしたらハマるかなと＾＾；</p>
+
+<p>開発環境はMacで、shellはzshを利用しています。</p>
+
+<p><a href="http://developer.android.com/sdk/index.html">Andorid SDK</a>、<a href="http://www.appcelerator.com/platform/titanium-studio/">Titanium Studio</a>で必要なものはインストール済みの前提です。</p>
+
+<p><a href="https://github.com/astronaughts/MakeTi">MakeTi</a>は@astronaughtsさんのgithubからcloneしてます。</p>
+
+<p>MakeFileはAndroid SDKが$HOME直下にAndroidというディレクトリ名で存在することが前提で書かれています。
+必要なファイル、ディレクトリにシンボリックリンクを貼って動くようにします。</p>
+
+<p><div><script src='https://gist.github.com/4011292.js?file='></script>
+<noscript><pre><code>mkdir -p ~/source
+cd ~/source
+git clone git://github.com/astronaughts/MakeTi.git MakeTi
+
+ln -s ~/source/MakeTi/bin ~/path/to/[your titanium mobile Project]/bin
+ln -s ~/source/MakeTi/Makefile ~/path/to/[your Titanium Mobile Project]/Makefile
+
+# $HOME以下にandroid-sdk-macosxが配置されていることが前提
+ln -s ~/android-sdk-macosx ~/Android
+</code></pre></noscript></div>
+</p>
+
+<p>それでは、実際に動かしてみましょう！
+<code>
+cd ~/path/to/[your titanium mobile Project]
+make clean &amp;&amp; make deploy platform=android
+</code>
+こんな感じで実機へのインストールがコマンドで実行できます。</p>
+
+<h2>うまく動かなかった方へ。</h2>
+
+<p>私みたいに2.0以前のTitanium Mobile SDKを利用していた方は、古いSDKを移動しておく必要があります。MakeTiが誤検知しちゃいますので。
+SDKのインストール先が2.0から$HOME/Library/Application Support/Titaniumへ移動した影響ですねー。
+<code>
+sudo mv /Library/Application\ Support/Titanium /Library/Application\ Support/Titanium_OLD
+</code></p>
+
+<p>ではでは〜。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Titanium MobileでDeployGateを利用する]]></title>
