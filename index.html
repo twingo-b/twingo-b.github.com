@@ -9,8 +9,7 @@
   <meta name="author" content="@twingo_b">
 
   
-  <meta name="description" content="Titanium mobile &#8220;early&#8221; Advent Calendar 2012用小ネタです。
-@astronaughtsさんが困ってたので、他の方ももしかしたらハマるかなと＾＾； 開発環境はMacで、shellはzshを利用しています。 Andorid SDK、 &hellip;">
+  <meta name="description" content="第25回まっちゃ１３９勉強会に参加して、とても勉強になったし、今後も使いそうなのでメモ。 Twitterのまとめはこちら。 テーマは、「管理者のためのDNSセキュリティ勉強会」、私は到着が開始時間に全然間に合わず、鈴木常彦先生の講演から聞きました。 DNSセキュリティの詳細は、 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -65,6 +64,85 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2012/11/18/matcha139-25th/">第25回まっちゃ１３９勉強会に参加してきました</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-11-18T19:10:00+09:00" pubdate data-updated="true">Nov 18<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a href="http://matcha139.hiemalis.org/hiki/?matcha139-25th">第25回まっちゃ１３９勉強会</a>に参加して、とても勉強になったし、今後も使いそうなのでメモ。</p>
+
+<p>Twitterのまとめは<a href="http://togetter.com/li/408532">こちら</a>。</p>
+
+<p>テーマは、「管理者のためのDNSセキュリティ勉強会」、私は到着が開始時間に全然間に合わず、鈴木常彦先生の講演から聞きました。</p>
+
+<p>DNSセキュリティの詳細は、識者のかたに解説譲るとして、、</p>
+
+<h2>浸透いうな</h2>
+
+<p>鈴木先生が啓蒙されているDNSの「浸透いうな」について、これって仕方ないのかなとずっと思ってたんですが、実はちゃんと運用できていないだけと聞いて、結構衝撃でした＾＾；</p>
+
+<p>具体的には、「<a href="http://www.e-ontap.com/dns/propagation/">浸透いうな!</a>」や「<a href="http://jprs.jp/related-info/guide/019.pdf">JPRSの資料、ＤＮＳサーバーの引っ越し</a>」を講演中にググって確認してました。</p>
+
+<p>実際に私が経験したものは、「<a href="http://www.e-ontap.com/dns/propagation/pinning.html">浸透いうな(その3):まずいNS設定</a>」の状況が起きていたんじゃないかなと。</p>
+
+<p>今後もName Serverの切替する事あるでしょうし、外部に切替を依頼するときに前提条件として理解しておけば、無用なトラブルを避けられそうです。これらの資料、社内・社外共に共有したいです。</p>
+
+<h2>共有DNSサーバーのリスク</h2>
+
+<p>こちらも身近な脅威だなと思ったのでメモ。</p>
+
+<p>「<a href="http://jprs.jp/tech/security/2012-06-22-shared-authoritative-dns-server.html">サービス運用上の問題に起因するドメイン名ハイジャックの危険性について</a>」</p>
+
+<p>これできちゃうと、メールを盗聴されたりしちゃいますよね。。今メインで利用しているAWSの<a href="http://aws.amazon.com/jp/route53/">Route53</a>は比較的安全で、約２千台のサーバーを用意することで、サブドメインのサーバーが重複しないように力技で対策しているそうです。ただし、こういうご意見もいただきました。</p>
+
+<p><img src="/images/matcha139-25th/beyonddns.png"></p>
+
+<h2>まっちゃ139の勉強会メソッド</h2>
+
+<p>懇親会からの帰りに、代表のまっちゃだいふくさんとご一緒して、勉強会に参加されている方の間で、コミュニケーションが生まれるように工夫されている点をお聞きしたのでメモ。</p>
+
+<ul>
+<li>参加者全員の自己紹介タイム、今回参加者は、７０名以上！</li>
+<li>おやつ休憩</li>
+<li>質疑応答・ディスカッション</li>
+<li>懇親会</li>
+</ul>
+
+
+<p>をスケジュールに組み込んでいるそうです。
+特に自己紹介が有効で、その後各人のバックグラウンドがわかっているので、お話しやすいとのこと。今後の勉強会開催するときに、取り入れたいなと思いました。</p>
+
+<p>以上、ぜひ次回も参加したいですー！</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -598,6 +676,10 @@ deploygate.refresh();
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/11/18/matcha139-25th/">第25回まっちゃ１３９勉強会に参加してきました</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2012/11/04/maketi/">MakeTiをAndroidで利用する</a>
