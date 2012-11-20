@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: iOS | twingo_b's blog]]></title>
+  <link href="http://twingo-b.github.com/blog/categories/ios/atom.xml" rel="self"/>
+  <link href="http://twingo-b.github.com/"/>
+  <updated>2012-11-20T21:26:18+09:00</updated>
+  <id>http://twingo-b.github.com/</id>
+  <author>
+    <name><![CDATA[@twingo_b]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[iOS builder.pyのコマンドラインオプション]]></title>
+    <link href="http://twingo-b.github.com/blog/2012/11/20/titanium-builder-py/"/>
+    <updated>2012-11-20T09:55:00+09:00</updated>
+    <id>http://twingo-b.github.com/blog/2012/11/20/titanium-builder-py</id>
+    <content type="html"><![CDATA[<p><a href="http://atnd.org/events/33731">Titanium mobile "early" Advent Calendar 2012</a>用小ネタ、2個目です。</p>
+
+<p>めずらしくiOSネタです＾＾；</p>
+
+<p>開発環境はMacで、shellはzshを利用しています。</p>
+
+<p>普段はMakeTiを使ってるんですが、Distributeとかもコマンドラインでやりたいなと思いました。そのためだけにTitanium Studio立ち上げるのめんどくさいですし―。</p>
+
+<p>そんな時は直接builer.pyを動かす必要があるんですが、コマンドラインオプションを調べようとヘルプを見ると、こんな感じでオプションがよくわからない。。Androidのbuilder.pyはまだわかるのに。</p>
+
+<p>```
+~/Library/Application\ Support/Titanium/mobilesdk/osx/2.1.3.GA/iphone/builder.py
+builder.py <command> <version> <project_dir> <appid> <name> [options]</p>
+
+<p>available commands:</p>
+
+<p>  install       install the app to itunes for testing on iphone
+  simulator     build and run on the iphone simulator
+  adhoc         build for adhoc distribution
+  distribute    build final distribution bundle
+  xcode         build from within xcode
+  run           build and run app from project folder
+```</p>
+
+<p>どうしたもんかなーと思っていると、build.logの最初にそれっぽい情報が！！！</p>
+
+<p>```</p>
+
+<h1>AdHocビルドのbuild.logの例</h1>
+
+<p>cd ~/path/to/[your titanium mobile Project]</p>
+
+<h1>head -n 30 build/iphone/build/build.log</h1>
+
+<p>Appcelerator Titanium Diagnostics Build Log
+The contents of this file are useful to send to Appcelerator Support if
+reporting an issue to help us understand your environment, build settings</p>
+
+<h1>and aid in debugging. Please attach this log to any issue that you report.</h1>
+
+<p>Starting build at 11/20/12 12:00</p>
+
+<p>Build details:</p>
+
+<p>   timestamp=10/02/12 16:16
+   module_apiversion=2
+   version=2.1.3
+   githash=15997d0</p>
+
+<p>Script arguments:
+   /Users/$USER/Library/Application Support/Titanium/mobilesdk/osx/2.1.3.GA/iphone/builder.py
+   adhoc
+   6.0
+   ~/path/to/[your titanium mobile Project]
+   [appid]
+   [name]
+   [xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx]
+   [証明書の名前]
+   universal
+   /Users/$USER/Library/Keychains/login.keychain
+```</p>
+
+<p>では、オプションに順番に入れたら動くかなーと思ってやってみたら、動きました！</p>
+
+<p><code>
+security unlock-keychain /Users/$USER/Library/Keychains/login.keychain
+/Users/$USER/Library/Application\ Support/Titanium/mobilesdk/osx/2.1.3.GA/iphone/builder.py "adhoc" "6.0" "~/path/to/[your titanium mobile Project]" "[appid]" "[name]" "[xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx]" "[証明書の名前]" "universal" "/Users/$USER/Library/Keychains/login.keychain"
+</code></p>
+
+<p>security unlock-keychain ~は、事前にやっとかないと、「SystemExit: 65」になりました。build.logの最後の方に「User interaction is not allowed.」と出てましたので判断できました。</p>
+
+<p>ipaファイルは以下に出力されてました</p>
+
+<p><code>
+~/path/to/[your titanium mobile Project]/build/iphone/build/Debug-iphoneos/[name].ipa
+</code></p>
+
+<p>同じように、Distributeも試してみましたが、大丈夫そう！</p>
+
+<p>これで、コマンドライン実行＆自動化できそうですー。</p>
+]]></content>
+  </entry>
+  
+</feed>
