@@ -1,0 +1,39 @@
+---
+layout: post
+title: "MakeTiをAndroidで利用する"
+date: 2012-11-04 00:00
+comments: true
+categories: "Titanium Android"
+---
+[Titanium mobile "early" Advent Calendar 2012](http://atnd.org/events/33731)用小ネタです。
+[@astronaughts](https://twitter.com/astronaughts)さんが困ってたので、他の方ももしかしたらハマるかなと＾＾；
+
+開発環境はMacで、shellはzshを利用しています。
+
+[Andorid SDK](http://developer.android.com/sdk/index.html)、[Titanium Studio](http://www.appcelerator.com/platform/titanium-studio/)で必要なものはインストール済みの前提です。
+
+[MakeTi](https://github.com/astronaughts/MakeTi)は@astronaughtsさんのgithubからcloneしてます。
+
+MakeFileはAndroid SDKが$HOME直下にAndroidというディレクトリ名で存在することが前提で書かれています。
+必要なファイル、ディレクトリにシンボリックリンクを貼って動くようにします。
+
+{% gist 4011292 %}
+
+それでは、実際に動かしてみましょう！
+```
+cd ~/path/to/[your titanium mobile Project]
+make clean && make deploy platform=android
+```
+こんな感じで実機へのインストールがコマンドで実行できます。
+
+## うまく動かなかった方へ。
+私みたいに2.0以前のTitanium Mobile SDKを利用していた方は、古いSDKを移動しておく必要があります。MakeTiが誤検知しちゃいますので。
+SDKのインストール先が2.0から$HOME/Library/Application Support/Titaniumへ移動した影響ですねー。
+```
+sudo mv /Library/Application\ Support/Titanium /Library/Application\ Support/Titanium_OLD
+```
+
+ではでは〜。
+
+
+
