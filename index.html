@@ -150,7 +150,7 @@ AWSを利用して開発していると、どうしてもAccessKeyId/SecretAcces
 
 <p>生成されたjsonはこちらになります。</p>
 
-<div><script src='https://gist.github.com/4244629.js?file='></script>
+<div><script src='https://gist.github.com/4244629.js'></script>
 <noscript><pre><code>{
   &quot;Statement&quot;: [
     {
@@ -198,7 +198,7 @@ AWSを利用して開発していると、どうしてもAccessKeyId/SecretAcces
 
 <p>サンプルコードはこちらです。とってもシンプルですね。</p>
 
-<div><script src='https://gist.github.com/4244638.js?file='></script>
+<div><script src='https://gist.github.com/4244638.js'></script>
 <noscript><pre><code>&lt;?php
 require_once(&quot;AWSSDKforPHP/sdk.class.php&quot;);
 date_default_timezone_set(&quot;Asia/Tokyo&quot;);
@@ -242,7 +242,7 @@ echo $response;
 
 <p>サンプルコードはこちらです。<code>x-amz-security-token</code>が解決できれば、すごくシンプルに書くことができました。</p>
 
-<div><script src='https://gist.github.com/4244625.js?file='></script>
+<div><script src='https://gist.github.com/4244625.js'></script>
 <noscript><pre><code>&lt;?php
 require_once(&quot;AWSSDKforPHP/sdk.class.php&quot;);
 require_once 'AWSSDKforPHP/extensions/s3browserupload.class.php';
@@ -649,7 +649,7 @@ $form_enctype = $html_parameters['form']['enctype'];
 <p>MakeFileはAndroid SDKが$HOME直下にAndroidというディレクトリ名で存在することが前提で書かれています。
 必要なファイル、ディレクトリにシンボリックリンクを貼って動くようにします。</p>
 
-<div><script src='https://gist.github.com/4011292.js?file='></script>
+<div><script src='https://gist.github.com/4011292.js'></script>
 <noscript><pre><code>mkdir -p ~/source
 cd ~/source
 git clone git://github.com/astronaughts/MakeTi.git MakeTi
@@ -735,7 +735,7 @@ SDKのインストール先が2.0から$HOME/Library/Application Support/Titaniu
 
 <h3>~/.zshrc例</h3>
 
-<div><script src='https://gist.github.com/3805894.js?file='></script>
+<div><script src='https://gist.github.com/3805894.js'></script>
 <noscript><pre><code>export ANT_OPTS=-Dfile.encoding=UTF8
 export ANDROID_SDK=$HOME/android-sdk
 export ANDROID_NDK=$HOME/android-ndk-r8b
@@ -825,7 +825,7 @@ alias titanium='$HOME/Library/Application\ Support/Titanium/mobilesdk/osx/2.1.2.
 
 <p>build.propertiesから環境変数を参照できるように<code>&lt;property environment="env"/&gt;</code>を追加しました。</p>
 
-<div><script src='https://gist.github.com/3805994.js?file='></script>
+<div><script src='https://gist.github.com/3805994.js'></script>
 <noscript><pre><code>&lt;project name=&quot;deploygate&quot; default=&quot;dist&quot;&gt;
         &lt;description&gt;
                 Ant build script for Titanium Android module TiDeployGate
@@ -841,7 +841,7 @@ alias titanium='$HOME/Library/Application\ Support/Titanium/mobilesdk/osx/2.1.2.
 
 <h3>build.propertiesの修正</h3>
 
-<div><script src='https://gist.github.com/3806005.js?file='></script>
+<div><script src='https://gist.github.com/3806005.js'></script>
 <noscript><pre><code>titanium.sdk=${env.HOME}/Library/Application\ Support/Titanium/ 
 titanium.os=osx
 titanium.version=2.1.2.GA
@@ -855,7 +855,7 @@ android.sdk=${env.HOME}/android-sdk</code></pre></noscript></div>
 
 <p><code>AndroidManifest.xml</code>はこの記述から自動生成されます。</p>
 
-<div><script src='https://gist.github.com/3806560.js?file='></script>
+<div><script src='https://gist.github.com/3806560.js'></script>
 <noscript><pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;                                                                      
 &lt;ti:module xmlns:ti=&quot;http://ti.appcelerator.org&quot; xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&gt;
         &lt;!--
@@ -911,7 +911,7 @@ android.sdk=${env.HOME}/android-sdk</code></pre></noscript></div>
 
 <p>例では、<code>forceApplyOnReleaseBuild:true</code>となるように、<code>DeployGate.install(app,null,true)</code>と指定しました。</p>
 
-<div><script src='https://gist.github.com/3806688.js?file='></script>
+<div><script src='https://gist.github.com/3806688.js'></script>
 <noscript><pre><code>// Exec Application#onCreate()
 @Kroll.onAppCreate
 public static void onAppCreate(TiApplication app) {
@@ -927,7 +927,7 @@ public static void onAppCreate(TiApplication app) {
 
 <p>こちらはmoduleやDeployGateのサンプルの通りです。</p>
 
-<div><script src='https://gist.github.com/3806719.js?file='></script>
+<div><script src='https://gist.github.com/3806719.js'></script>
 <noscript><pre><code>// Methods
 @Kroll.method
 public void log(String mode, String message) {
@@ -989,7 +989,7 @@ public void refresh() {
 
 <p><code>ant run</code>で動作確認できるように、js側でmoduleを呼び出します。</p>
 
-<div><script src='https://gist.github.com/3806739.js?file='></script>
+<div><script src='https://gist.github.com/3806739.js'></script>
 <noscript><pre><code>// TODO: write your module tests here
 var deploygate = require('local.twingob.android.tideploygate');
 
@@ -1106,7 +1106,7 @@ deploygate.refresh();
 
 <p>moduleの指定を追加します。リモートLogCatを利用する場合は、<code>&lt;uses-permission android:name="android.permission.READ_LOGS" /&gt;</code>も記載します。</p>
 
-<div><script src='https://gist.github.com/3806841.js?file='></script>
+<div><script src='https://gist.github.com/3806841.js'></script>
 <noscript><pre><code>&lt;android xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&gt;
     &lt;manifest&gt;
        &lt;uses-permission android:name=&quot;android.permission.READ_LOGS&quot; /&gt;

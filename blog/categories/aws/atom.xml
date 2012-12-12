@@ -4,7 +4,7 @@
   <title><![CDATA[Category: AWS | twingo_b's blog]]></title>
   <link href="http://twingo-b.github.com/blog/categories/aws/atom.xml" rel="self"/>
   <link href="http://twingo-b.github.com/"/>
-  <updated>2012-12-09T22:52:03+09:00</updated>
+  <updated>2012-12-12T21:26:31+09:00</updated>
   <id>http://twingo-b.github.com/</id>
   <author>
     <name><![CDATA[@twingo_b]]></name>
@@ -70,7 +70,7 @@ $s3 = new AmazonS3(array(</p>
 
 <p>生成されたjsonはこちらになります。</p>
 
-<p><div><script src='https://gist.github.com/4244629.js?file='></script>
+<p><div><script src='https://gist.github.com/4244629.js'></script>
 <noscript><pre><code>{
   &quot;Statement&quot;: [
     {
@@ -116,7 +116,7 @@ sudo yum -y install php httpd php-amazon-sdk
 <p>ここからが本題です。</p>
 
 <p>サンプルコードはこちらです。とってもシンプルですね。
-<div><script src='https://gist.github.com/4244638.js?file='></script>
+<div><script src='https://gist.github.com/4244638.js'></script>
 <noscript><pre><code>&lt;?php
 require_once(&quot;AWSSDKforPHP/sdk.class.php&quot;);
 date_default_timezone_set(&quot;Asia/Tokyo&quot;);
@@ -155,7 +155,7 @@ InvalidAccessKeyId
 とエラーが出力されて、アップロードに失敗します。かなりググって悩みました。</p>
 
 <p>サンプルコードはこちらです。<code>x-amz-security-token</code>が解決できれば、すごくシンプルに書くことができました。
-<div><script src='https://gist.github.com/4244625.js?file='></script>
+<div><script src='https://gist.github.com/4244625.js'></script>
 <noscript><pre><code>&lt;?php
 require_once(&quot;AWSSDKforPHP/sdk.class.php&quot;);
 require_once 'AWSSDKforPHP/extensions/s3browserupload.class.php';
