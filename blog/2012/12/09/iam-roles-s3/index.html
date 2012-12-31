@@ -1,0 +1,503 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>IAM roles for EC2 instancesを利用して、S3 Pre-signed URL生成／Direct Object Upload - twingo_b's blog</title>
+  <meta name="author" content="@twingo_b">
+
+  
+  <meta name="description" content="AWS Advent Calendar 2012の９日目です。 IAM roles for EC2 instances（以下IAM roles）ってご存知でしょうか？
+AWSを利用して開発していると、どうしてもAccessKeyId/SecretAccessKeyの扱いに困りますよね？ IAM &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://twingo-b.github.com/blog/2012/12/09/iam-roles-s3/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="twingo_b's blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">twingo_b's blog</a></h1>
+  
+    <h2>memo</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:twingo-b.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">IAM Roles for EC2 instancesを利用して、S3 Pre-signed URL生成／Direct Object Upload</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-09T21:00:00+09:00" pubdate data-updated="true">Dec 9<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="http://www.zusaar.com/event/451053">AWS Advent Calendar 2012</a>の９日目です。</p>
+
+<p><a href="http://aws.typepad.com/aws_japan/2012/06/iam-roles-for-ec2-instances-simplified-secure-access-to-aws-service-apis-from-ec2.html">IAM roles for EC2 instances</a>（以下IAM roles）ってご存知でしょうか？
+AWSを利用して開発していると、どうしてもAccessKeyId/SecretAccessKeyの扱いに困りますよね？</p>
+
+<p>IAM rolesを利用すると、このようにプログラムやコンフィグファイルに埋め込んでいたものが、</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>require_once 'AWSSDKforPHP/sdk.class.php';
+</span><span class='line'>$s3 = new AmazonS3(array(
+</span><span class='line'>  'key' =&gt; 'xxxxxx',
+</span><span class='line'>  'secret' =&gt; 'xxxxxx',
+</span><span class='line'>));</span></code></pre></td></tr></table></div></figure>
+
+
+<p>書かなくて良くなります＾＾</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>require_once 'AWSSDKforPHP/sdk.class.php';
+</span><span class='line'>$s3 = new AmazonS3(array(
+</span><span class='line'>  'default_cache_config' =&gt; '/tmp'
+</span><span class='line'>));</span></code></pre></td></tr></table></div></figure>
+
+
+<p>今回は、普段良く利用しているS3 Pre-signed URL生成／Direct Object UploadがIAM rolesでもちゃんと動くか検証しないとなーと前から思っていましたので、この機会にやってみることにしました。</p>
+
+<h3>前提条件</h3>
+
+<p>以下の環境で動作確認を行いました。</p>
+
+<ul>
+<li>Amazon Linux AMI 2012.09</li>
+<li>PHP 5.3.18</li>
+<li>php-amazon-sdk-1.5.17</li>
+</ul>
+
+
+<h3>IAM rolesの作成</h3>
+
+<p>詳細は、クラスメソッド開発ブログさんの<a href="http://dev.classmethod.jp/cloud/iam-roles-for-ec2-instances/">IAM roles for EC2 instancesって何？</a>を参照されると良いと思います。今回S3を利用する上でポイントとなる部分を説明します。</p>
+
+<p>特定のバケット以下のみアクセス権を与えたいので、Edit Permissionsで、下記のように設定しました。</p>
+
+<p>特定のバケットのみ操作を許可したい場合でも、<code>ListAllMyBuckets</code>はすべて許可しておく必要があります。<code>get_bucket_list()</code>が失敗しますので。また、特定のバケット以下のみ許可する場合に、<code>arn:aws:s3:::[bucket]</code>と<code>arn:aws:s3:::[bucket]/*</code>を両方書かないと、うまく動かなかったです＾＾；</p>
+
+<p><img src="/images/iam-roles-s3/edit_permissions.png"></p>
+
+<p>生成されたjsonはこちらになります。</p>
+
+<div><script src='https://gist.github.com/4244629.js'></script>
+<noscript><pre><code>{
+  &quot;Statement&quot;: [
+    {
+      &quot;Sid&quot;: &quot;Stmt1355032668784&quot;,
+      &quot;Action&quot;: [
+        &quot;s3:ListAllMyBuckets&quot;
+      ],
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Resource&quot;: [
+        &quot;arn:aws:s3:::*&quot;
+      ]
+    },
+    {
+      &quot;Sid&quot;: &quot;Stmt1355032715622&quot;,
+      &quot;Action&quot;: [
+        &quot;s3:*&quot;
+      ],
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Resource&quot;: [
+        &quot;arn:aws:s3:::test-twingob&quot;,
+        &quot;arn:aws:s3:::test-twingob/*&quot;
+      ]
+    }
+  ]
+}</code></pre></noscript></div>
+
+
+<h3>EC2インスタンスの起動</h3>
+
+<p>ここもポイントだけ。<code>Launch Instance</code>時は<code>Classic Wizard</code>を選ばないと、<code>IAM Role</code>を選べなかったです。</p>
+
+<p><img src="/images/iam-roles-s3/ec2_iam_roles.png"></p>
+
+<h3>セットアップ</h3>
+
+<p>最低限、必要なものだけインストールしました。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo yum -y install php httpd php-amazon-sdk</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>S3 Pre-signed URL生成</h3>
+
+<p>ここからが本題です。</p>
+
+<p>サンプルコードはこちらです。とってもシンプルですね。</p>
+
+<div><script src='https://gist.github.com/4244638.js'></script>
+<noscript><pre><code>&lt;?php
+require_once(&quot;AWSSDKforPHP/sdk.class.php&quot;);
+date_default_timezone_set(&quot;Asia/Tokyo&quot;);
+
+$bucket = &quot;test-twingob&quot;;
+$file_name = &quot;test.txt&quot;;
+$expiration_time = &quot;+1 minute&quot;;
+
+$s3 = new AmazonS3(array(
+    'default_cache_config' =&gt; '/tmp'
+));
+
+$opt = array('https' =&gt; true);
+$response = $s3-&gt;get_object_url($bucket, $file_name, $expiration_time, $opt);
+
+echo $response;
+?&gt;
+</code></pre></noscript></div>
+
+
+<p>実行すると、このように1分のみ有効なURLが生成されます。
+プログラム埋め込み時は固定だった<code>AWSAccessKeyId</code>も、定期的に変更されます＾＾</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>php get_object_url.php 
+</span><span class='line'>https://test-twingob.s3.amazonaws.com/test.txt?AWSAccessKeyId=ASIAJQ4QZDDBS22LYMGA&Expires=1355056156&Signature=Zq9j1K6eG9zDjzA7uUrgIRr2i10%3D&x-amz-security-token=AQoDYXdzEC0agALr%2BzwOiErKaI1Jd1kg7Ejc1zx5TpExGmaYG2VliSjiOX%2BHZ09j9397tnGlcKthKixDTUDf49tHssOxAuyLAK5vM5jjz%2BA6CM4jZUz43%2FN4BbMWI%2FnyN2Bdf96xGrkOp1puOqoXt0hk134%2BqUEySXtSFIds8S%2B4Ijn0Oa7hlaVykkhfcx6YErTOfS6mc6U3DjkxZB9P9ia6c%2FlGEFexUzNVYi1hvgxTshBHA8bi%2FMXqhLNeY5XoDJ13S4Ym8BxD0N2P0thlEMF80xb9WcRyhuFWn4xumUSbdWYAcvXbrKR9mwbeY0qeRRUzBBAwSM%2BJM4rH8X5tLQQs4OCC7bCVx0EJIJvpkYYF</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Direct Object Upload</h3>
+
+<p>CDPの<a href="http://aws.clouddesignpattern.org/index.php/CDP:Direct_Object_Upload%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3">Direct Object Uploadパターン</a>になります。PHPで簡単に実現する方法ないかなーと思って探していたら、<a href="http://docs.amazonwebservices.com/AWSSDKforPHP/latest/index.html#m=S3BrowserUpload/generate_upload_parameters">S3BrowserUpload</a>を見つけました！自分でpolicyやsignature生成しなくても良いので、とっても便利！でも落とし穴が＾＾；</p>
+
+<p>IAM rolesでAPIを利用するときに必要な<code>x-amz-security-token</code>を自動で付与してくれないんですよね。付与しない状態で動かすと、</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>InvalidAccessKeyId</span></code></pre></td></tr></table></div></figure>
+
+
+<p>とエラーが出力されて、アップロードに失敗します。かなりググって悩みました。</p>
+
+<p>サンプルコードはこちらです。<code>x-amz-security-token</code>が解決できれば、すごくシンプルに書くことができました。</p>
+
+<div><script src='https://gist.github.com/4244625.js'></script>
+<noscript><pre><code>&lt;?php
+require_once(&quot;AWSSDKforPHP/sdk.class.php&quot;);
+require_once 'AWSSDKforPHP/extensions/s3browserupload.class.php';
+date_default_timezone_set(&quot;Asia/Tokyo&quot;);
+
+$id       = &quot;00000001&quot;;
+$filename = $id.&quot;.txt&quot;;
+$bucket = &quot;test-twingob&quot;;
+$expiration_time = &quot;+1 minute&quot;;
+$redirect   = &quot;http://twingo-b.github.com/?id=$id&quot;;
+
+$upload = new S3BrowserUpload(array(
+    'default_cache_config' =&gt; '/tmp'
+));
+$auth_token = $upload-&gt;auth_token;
+
+// Generate the parameters for the upload.
+$html_parameters = $upload-&gt;generate_upload_parameters($bucket, $expiration_time, array(
+
+    // Set permissions to private.
+    'acl' =&gt; AmazonS3::ACL_PRIVATE,
+
+    // Set various HTTP headers on the uploaded file.
+    'Content-Disposition' =&gt; 'attachment; filename='.$filename,
+    'Content-Type' =&gt; '^text/',
+
+    // The S3 Key to upload to. ${filename} is an S3 variable that equals the name of the file being uploaded.
+    // We're also using PHP's built-in Filter extension in this example.
+    'key' =&gt; $filename,
+
+    // Where should S3 redirect to after the upload completes? The current page.
+    'success_action_redirect' =&gt; $redirect,
+
+    // Status code to send back on success. This is primarily to work around issues in Adobe® Flash®.
+    'success_action_status' =&gt; 201,
+    
+    // For IAM roles
+    'x-amz-security-token' =&gt; $auth_token
+));
+
+// Form parameters
+$form_action = &quot;http://&quot;.$html_parameters['form']['action'].&quot;/&quot;;
+$form_method = $html_parameters['form']['method'];
+$form_enctype = $html_parameters['form']['enctype'];
+
+?&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=utf-8&quot;/&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;form action=&quot;&lt;?php print($form_action); ?&gt;&quot;
+          method=&quot;&lt;?php print($form_method); ?&gt;&quot;
+          enctype=&quot;&lt;?php print($form_enctype); ?&gt;&quot;&gt;
+    
+        &lt;?php foreach ($html_parameters['inputs'] as $name =&gt; $value): ?&gt;
+        &lt;input type=&quot;hidden&quot; name=&quot;&lt;?php print($name); ?&gt;&quot; value=&quot;&lt;?php print($value); ?&gt;&quot;&gt;
+        &lt;?php endforeach; ?&gt;
+    
+        &lt;input type=&quot;file&quot; name=&quot;file&quot;&gt;
+        &lt;input type=&quot;submit&quot; name=&quot;upload&quot; value=&quot;Upload&quot;&gt;
+    &lt;/form&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></noscript></div>
+
+
+<p>実行すると、このようなHTMLが生成されます。このフォームも表示後1分のみ有効です。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>curl http://localhost/post_object.php
+</span><span class='line'>&lt;html&gt;
+</span><span class='line'>  &lt;head&gt;
+</span><span class='line'>    &lt;meta http-equiv="Content-Type" content="text/html; charset=utf-8"/&gt;
+</span><span class='line'>  &lt;/head&gt;
+</span><span class='line'>  &lt;body&gt;
+</span><span class='line'>    &lt;form action="http://test-twingob.s3.amazonaws.com/"
+</span><span class='line'>          method="POST"
+</span><span class='line'>          enctype="multipart/form-data"&gt;
+</span><span class='line'>    
+</span><span class='line'>                &lt;input type="hidden" name="AWSAccessKeyId" value="ASIAJQ4QZDDBS22LYMGA"&gt;
+</span><span class='line'>                &lt;input type="hidden" name="success_action_status" value="201"&gt;
+</span><span class='line'>                &lt;input type="hidden" name="acl" value="private"&gt;
+</span><span class='line'>                &lt;input type="hidden" name="Content-Disposition" value="attachment; filename=00000001.txt"&gt;
+</span><span class='line'>                &lt;input type="hidden" name="Content-Type" value="text/"&gt;
+</span><span class='line'>                &lt;input type="hidden" name="key" value="00000001.txt"&gt;
+</span><span class='line'>                &lt;input type="hidden" name="success_action_redirect" value="http://twingo-b.github.com/?id=00000001"&gt;
+</span><span class='line'>                &lt;input type="hidden" name="x-amz-security-token" value="AQoDYXdzEC0agALr+zwOiErKaI1Jd1kg7Ejc1zx5TpExGmaYG2VliSjiOX+HZ09j9397tnGlcKthKixDTUDf49tHssOxAuyLAK5vM5jjz+A6CM4jZUz43/N4BbMWI/nyN2Bdf96xGrkOp1puOqoXt0hk134+qUEySXtSFIds8S+4Ijn0Oa7hlaVykkhfcx6YErTOfS6mc6U3DjkxZB9P9ia6c/lGEFexUzNVYi1hvgxTshBHA8bi/MXqhLNeY5XoDJ13S4Ym8BxD0N2P0thlEMF80xb9WcRyhuFWn4xumUSbdWYAcvXbrKR9mwbeY0qeRRUzBBAwSM+JM4rH8X5tLQQs4OCC7bCVx0EJIJvpkYYF"&gt;
+</span><span class='line'>                &lt;input type="hidden" name="policy" value="eyJjb25kaXRpb25zIjpbeyJidWNrZXQiOiJ0ZXN0LXR3aW5nb2IifSx7InN1Y2Nlc3NfYWN0aW9uX3N0YXR1cyI6IjIwMSJ9LHsiYWNsIjoicHJpdmF0ZSJ9LHsiQ29udGVudC1EaXNwb3NpdGlvbiI6ImF0dGFjaG1lbnQ7IGZpbGVuYW1lPTAwMDAwMDAxLnR4dCJ9LFsic3RhcnRzLXdpdGgiLCIkQ29udGVudC1UeXBlIiwidGV4dFwvIl0seyJrZXkiOiIwMDAwMDAwMS50eHQifSx7InN1Y2Nlc3NfYWN0aW9uX3JlZGlyZWN0IjoiaHR0cDpcL1wvdHdpbmdvLWIuZ2l0aHViLmNvbVwvP2lkPTAwMDAwMDAxIn0seyJ4LWFtei1zZWN1cml0eS10b2tlbiI6IkFRb0RZWGR6RUMwYWdBTHIrendPaUVyS2FJMUpkMWtnN0VqYzF6eDVUcEV4R21hWUcyVmxpU2ppT1grSFowOWo5Mzk3dG5HbGNLdGhLaXhEVFVEZjQ5dEhzc094QXV5TEFLNXZNNWpqeitBNkNNNGpaVXo0M1wvTjRCYk1XSVwvbnlOMkJkZjk2eEdya09wMXB1T3FvWHQwaGsxMzQrcVVFeVNYdFNGSWRzOFMrNElqbjBPYTdobGFWeWtraGZjeDZZRXJUT2ZTNm1jNlUzRGpreFpCOVA5aWE2Y1wvbEdFRmV4VXpOVllpMWh2Z3hUc2hCSEE4YmlcL01YcWhMTmVZNVhvREoxM1M0WW04QnhEME4yUDB0aGxFTUY4MHhiOVdjUnlodUZXbjR4dW1VU2JkV1lBY3ZYYnJLUjltd2JlWTBxZVJSVXpCQkF3U00rSk00ckg4WDV0TFFRczRPQ0M3YkNWeDBFSklKdnBrWVlGIn1dLCJleHBpcmF0aW9uIjoiMjAxMi0xMi0wOVQxMjo1Njo1OVoifQ=="&gt;
+</span><span class='line'>                &lt;input type="hidden" name="signature" value="xjyu5PRSm0mZLg5s6yvbH4FUY9I="&gt;
+</span><span class='line'>            
+</span><span class='line'>        &lt;input type="file" name="file"&gt;
+</span><span class='line'>        &lt;input type="submit" name="upload" value="Upload"&gt;
+</span><span class='line'>    &lt;/form&gt;
+</span><span class='line'>  &lt;/body&gt;
+</span><span class='line'>&lt;/html&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>さいごに</h3>
+
+<p>ちゃんと動いてよかった＾＾。動かなくて<code>S3BrowserUpload</code>のgithubのソースコード見てたら、authorがラスベガスのre:Inventでお会いした<a href="https://github.com/jeremeamia">Jeremy</a>さんでした。ちょっとほっこりした＾＾</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">@twingo_b</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-09T21:00:00+09:00" pubdate data-updated="true">Dec 9<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/aws/'>AWS</a>, <a class='category' href='/blog/categories/php/'>PHP</a>, <a class='category' href='/blog/categories/s3/'>S3</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://twingo-b.github.com/blog/2012/12/09/iam-roles-s3/" data-via="" data-counturl="http://twingo-b.github.com/blog/2012/12/09/iam-roles-s3/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/11/20/titanium-builder-py/" title="Previous Post: iOS builder.pyのコマンドラインオプション">&laquo; iOS builder.pyのコマンドラインオプション</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2012/12/09/iam-roles-s3/">IAM roles for EC2 instancesを利用して、S3 Pre-signed URL生成／Direct Object Upload</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/11/20/titanium-builder-py/">iOS builder.pyのコマンドラインオプション</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/11/18/matcha139-25th/">第25回まっちゃ１３９勉強会に参加してきました</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/11/04/maketi/">MakeTiをAndroidで利用する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/10/01/tideploygate/">Titanium MobileでDeployGateを利用する</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - @twingo_b -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

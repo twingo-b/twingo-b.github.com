@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: DeployGate | twingo_b's blog]]></title>
+  <link href="http://twingo-b.github.com/blog/categories/deploygate/atom.xml" rel="self"/>
+  <link href="http://twingo-b.github.com/"/>
+  <updated>2013-01-01T00:24:21+09:00</updated>
+  <id>http://twingo-b.github.com/</id>
+  <author>
+    <name><![CDATA[@twingo_b]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Titanium MobileでDeployGateを利用する]]></title>
+    <link href="http://twingo-b.github.com/blog/2012/10/01/tideploygate/"/>
+    <updated>2012-10-01T00:00:00+09:00</updated>
+    <id>http://twingo-b.github.com/blog/2012/10/01/tideploygate</id>
+    <content type="html"><![CDATA[<p><a href="https://twitter.com/astronaughts">@astronaughts</a>さんから依頼を受け、moduleを作成したところ、ひと通りうまく動作しました＾＾。</p>
+
+<p>検証中にちょっとハマったところがあり、<a href="https://twitter.com/DeployGate_ja">@DeployGate_ja</a>さんにドキュメントの改善要望をお問い合わせしました。</p>
+
+<p>その後、こんなお話をいただいたので、Octpressの練習も兼ねてmoduleの作成方法を公開します。</p>
+
+<p><img src="/images/tideploygate/deploygate_ja.png"></p>
+
+<p>サンプルソースはGitHubに置いておきましたので、<a href="https://github.com/twingo-b/tideploygate">こちら</a>をどうぞ。</p>
+
+<p><a href="http://developer.android.com/sdk/index.html">Andorid SDK</a>、<a href="http://www.appcelerator.com/platform/titanium-studio/">Titanium Studio</a>、<a href="https://deploygate.com/">DeployGate</a>で必要なものはインストール済みの前提です。</p>
+
+<p>開発環境はMacで、shellはzshを利用しています。</p>
+
+<h2>Titanium Mobileのandroid moduleの作成</h2>
+
+<h3>~/.zshrc例</h3>
+
+<p><div><script src='https://gist.github.com/3805894.js'></script>
+<noscript><pre><code>export ANT_OPTS=-Dfile.encoding=UTF8
+export ANDROID_SDK=$HOME/android-sdk
+export ANDROID_NDK=$HOME/android-ndk-r8b
+export PATH=$ANDROID_SDK/tools:$PATH
+alias titanium='$HOME/Library/Application\ Support/Titanium/mobilesdk/osx/2.1.2.GA/titanium.py'</code></pre></noscript></div>
+</p>
+
+<h3>moduleを作成する</h3>
+
+<p>適当なディレクトリに移動して、<code>.zshrc</code>でalias指定した<code>titanium</code>コマンドでmoduleのテンプレートを生成します。
+<code>
+$ titanium create --platform=android --type=module --name=TiDeployGate --id=local.twingob.android.tideploygate --android=$ANDROID_SDK
+</code>
+<code>Created android module project</code>と出れば成功です。</p>
+
+<p><code>tideploygate</code>ディレクトリ以下にテンプレートが作成されました。
+```
+LICENSE
+assets
+- README
+bin
+build
+build.properties
+build.xml
+dist
+documentation
+- index.md
+example
+- app.js
+hooks
+- README
+- add.py
+- install.py
+- remove.py
+- uninstall.py
+lib
+libs
+manifest
+platform
+- README
+src
+- local
+  - twingob</p>
+
+<pre><code>  - android
+      - tideploygate
+          - ExampleProxy.java
+          - TideploygateModule.java
+</code></pre>
+
+<p>timodule.xml
+```</p>
+
+<p><code>build.xml</code>,<code>build.properties</code>がローカルPATHを指しており、そのままではコード共有しにくいので修正します。Titanium Studio、Eclipseなどを利用する場合は<code>.classpath</code>も同様に修正したほうが良いです。</p>
+
+<h3>build.xmlの修正</h3>
+
+<p>build.propertiesから環境変数を参照できるように<code>&lt;property environment="env"/&gt;</code>を追加しました。
+<div><script src='https://gist.github.com/3805994.js'></script>
+<noscript><pre><code>&lt;project name=&quot;deploygate&quot; default=&quot;dist&quot;&gt;
+        &lt;description&gt;
+                Ant build script for Titanium Android module TiDeployGate
+        &lt;/description&gt;
+
+        &lt;property environment=&quot;env&quot;/&gt;
+        &lt;property name=&quot;ti.module.root&quot; location=&quot;${basedir}&quot;/&gt;
+        &lt;property file=&quot;build.properties&quot; /&gt;
+
+        &lt;import file=&quot;${titanium.platform}/../module/android/build.xml&quot;/&gt;
+&lt;/project&gt;</code></pre></noscript></div>
+</p>
+
+<h3>build.propertiesの修正</h3>
+
+<p><div><script src='https://gist.github.com/3806005.js'></script>
+<noscript><pre><code>titanium.sdk=${env.HOME}/Library/Application\ Support/Titanium/ 
+titanium.os=osx
+titanium.version=2.1.2.GA
+android.ndk=${env.HOME}/android-ndk-r8b
+android.sdk=${env.HOME}/android-sdk</code></pre></noscript></div>
+</p>
+
+<h3>timodule.xmlの修正</h3>
+
+<p>example/app.jsからの動作確認時、リモートLogCatが利用できるように<code>&lt;uses-permission android:name="android.permission.READ_LOGS" /&gt;</code>を記載しておきます。</p>
+
+<p><code>AndroidManifest.xml</code>はこの記述から自動生成されます。
+<div><script src='https://gist.github.com/3806560.js'></script>
+<noscript><pre><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;                                                                      
+&lt;ti:module xmlns:ti=&quot;http://ti.appcelerator.org&quot; xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&gt;
+        &lt;!--
+                Similar to tiapp.xml, but contains module/platform specific
+                configuration in &lt;iphone&gt;, &lt;android&gt;, and &lt;mobileweb&gt; sections
+        --&gt;
+        &lt;iphone&gt;
+        &lt;/iphone&gt;
+        &lt;android xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&gt;
+                &lt;manifest&gt;
+                        &lt;uses-permission android:name=&quot;android.permission.READ_LOGS&quot; /&gt;
+                &lt;/manifest&gt;
+        &lt;/android&gt;
+        &lt;mobileweb&gt;
+        &lt;/mobileweb&gt;
+&lt;/ti:module&gt;</code></pre></noscript></div>
+</p>
+
+<h3>libディレクトリにdeploygatesdk.jarをコピーする</h3>
+
+<p>後ほど説明するantビルド時に、<code>lib</code>ディレクトリのjarが参照されます。</p>
+
+<h2>moduleのソースコード変更、DeployGateの呼び出し</h2>
+
+<p>コマンドから自動生成されるソースコードは下記２種類です。
+<code>src/local/twingob/android/tideploygate</code>
+<code>
+- ExampleProxy.java
+- TideploygateModule.java
+</code></p>
+
+<h3>不用なサンプルファイルを削除</h3>
+
+<p>今回はProxyは利用しないので、<code>ExampleProxy.java</code>は削除します。</p>
+
+<p>以降は、テンプレートをTitanium Studio、Eclipseにインポートしたほうがやりやすいかと思います。</p>
+
+<h3>TideploygateModule.javaの名前が気になるのでリファクタリング</h3>
+
+<p>TiDeployGateModule.javaに修正しました。</p>
+
+<h3>TiDeployGateModule#onAppCreate()にDeployGate#install()を追加</h3>
+
+<p><strong><em> ここがTitanium MobileでDeployGateを利用する際のポイントになります。 </em></strong></p>
+
+<p>TiDeployGateModule#onAppCreate()はApplication#onCreate()時に呼び出されます。</p>
+
+<p>また、Titanium Mobileで生成される<code>AndroidManifest.xml</code>の<code>android:debuggable</code>は常に<code>false</code>となっています。</p>
+
+<p>そのため、<code>DeployGatei#install(Application app)</code>ではなく、<code>DeployGate#install(Application app, DeployGateCallback callback, boolean forceApplyOnReleaseBuild)</code> を利用する必要があります。<code>deploygatesdk-javadoc.jar</code>にその旨記載がありました。</p>
+
+<p>例では、<code>forceApplyOnReleaseBuild:true</code>となるように、<code>DeployGate.install(app,null,true)</code>と指定しました。
+<div><script src='https://gist.github.com/3806688.js'></script>
+<noscript><pre><code>// Exec Application#onCreate()
+@Kroll.onAppCreate
+public static void onAppCreate(TiApplication app) {
+	// put module init code that needs to run when the application is created
+	Log.d(LCAT, &quot;DeployGate#install()&quot;);
+	DeployGate.install(app,null,true);
+}</code></pre></noscript></div>
+
+Android SDKをEclipseから開発ビルドした場合は、<code>android:debuggable</code>は<code>true</code>になるみたいです。最初DeployGateのWeb上のドキュメントだけ見て、JavaDocを読んでなかったので、なぜ動かないのかわからず、ちょっとはまりました＾＾；。ドキュメントは最初にひと通り読まないとダメですよね＞＜。</p>
+
+<h3>クラスのコンストラクタ以外のmethodサンプルを削除して、必要なmethodを追加</h3>
+
+<p>こちらはmoduleやDeployGateのサンプルの通りです。
+<div><script src='https://gist.github.com/3806719.js'></script>
+<noscript><pre><code>// Methods
+@Kroll.method
+public void log(String mode, String message) {
+	switch (LogMode.toLogMode(mode)) {
+	case ERROR:
+		DeployGate.logError(message);
+		break;
+	case WARN:
+		DeployGate.logWarn(message);
+		break;
+	case DEBUG:
+		DeployGate.logDebug(message);
+		break;
+	case INFO:
+		DeployGate.logInfo(message);
+		break;
+	case VERBOSE:
+		DeployGate.logVerbose(message);
+		break;
+	default:
+		Log.d(LCAT, &quot;LogMode Error:&quot; + mode);
+		return;
+	}
+}
+
+@Kroll.method
+public boolean isInitialized() {
+	return DeployGate.isInitialized();
+}
+
+@Kroll.method
+public boolean isManaged() {
+	return DeployGate.isManaged();
+}
+
+@Kroll.method
+public boolean isDeployGateAvailable() {
+	return DeployGate.isDeployGateAvaliable();
+}
+
+@Kroll.method
+public boolean isAuthorized() {
+	return DeployGate.isAuthorized();
+}
+
+@Kroll.method
+public String getLoginUsername() {
+	return DeployGate.getLoginUsername();
+}
+
+@Kroll.method
+public void refresh() {
+	DeployGate.refresh();
+}
+</code></pre></noscript></div>
+</p>
+
+<h3>example/app.jsを記載して、moduleの動作確認を行う</h3>
+
+<p><code>ant run</code>で動作確認できるように、js側でmoduleを呼び出します。
+<div><script src='https://gist.github.com/3806739.js'></script>
+<noscript><pre><code>// TODO: write your module tests here
+var deploygate = require('local.twingob.android.tideploygate');
+
+Ti.API.info(&quot;module is =&gt; &quot; + deploygate);
+
+var text = 'ログテスト';
+deploygate.log('ERROR',text);
+deploygate.log('WARN',text);
+deploygate.log('DEBUG',text);
+deploygate.log('INFO',text);
+deploygate.log('VERBOSE',text);
+
+deploygate.log('DEBUG','isInitialized:' + deploygate.isInitialized());
+deploygate.log('DEBUG','isManaged:' + deploygate.isManaged());
+deploygate.log('DEBUG','isDeployGateAvailable:' + deploygate.isDeployGateAvailable());
+deploygate.log('DEBUG','isAuthorized:' + deploygate.isAuthorized());
+deploygate.log('DEBUG','getLoginUsername:' + deploygate.getLoginUsername());
+deploygate.refresh();
+</code></pre></noscript></div>
+</p>
+
+<p>moduleは、テンプレートのディレクトリ直下でantコマンドを実行すると、emulatorで動作確認ができるので、実行してみます。</p>
+
+<p>Android emulatorの起動
+<code>
+$ ant run.emulator
+</code>
+Terminalの別のTabでテストビルド
+<code>
+$ ant run
+</code>
+無事アプリは起動したのですが、emulatorのLogCatに下記のように出力され、動作しませんでした。DeployGateのクライアントアプリのインストールが必要ということですよね。
+<code>
+DeployGate  V  DeployGate is not available on this device.
+</code></p>
+
+<p>そこで、<code>ant run</code>してできたapkを<code>dgate push</code>して、実機で動作確認して見ることにしました。<code>ant run</code>のログの最後の方に下記のように出力されているので、それを使ってみます。
+```</p>
+
+<pre><code> [exec] [DEBUG] /Users/[user]/android-sdk/platform-tools/adb -e install -r /var/folders/3j/cjcy2jcd6tlbkqyv1crfj1yh0000gn/T/m0sWWDXti/tideploygate/build/android/bin/app.apk  
+ [exec] [INFO] Launching application ... tideploygate
+</code></pre>
+
+<p>```</p>
+
+<p>```
+$ dgate push /var/folders/3j/cjcy2jcd6tlbkqyv1crfj1yh0000gn/T/m0sWWDXti/tideploygate/build/android/bin/app.apk
+Push app file successful!</p>
+
+<p>Name :          tideploygate
+Owner :         twingo_b
+Package :       local.twingob.android.tideploygate
+Revision :      1
+URL :           https://deploygate.com/users/twingo_b/apps/local.twingob.android.tideploygate?key=3cc6266d2d8a606a25dfcb209331bf5de954734a
+```</p>
+
+<p>無事Pushできたので、アプリを実機で起動してみます。</p>
+
+<p>動いた！</p>
+
+<p><img src="/images/tideploygate/deploygatelog.png"></p>
+
+<p>リモートLogCatも動いた！</p>
+
+<p><img src="/images/tideploygate/remotelogcat.png"></p>
+
+<p>うまく動いてますね＾＾。</p>
+
+<h2>Titanium Mobileプロジェクトでの利用</h2>
+
+<h3>実際のプロジェクトで利用するために、moduleのzipファイルを生成</h3>
+
+<p><code>ant dist</code>コマンドで、zipファイルを生成します。
+```
+$ ant dist
+...
+zip.libs:</p>
+
+<pre><code>  [zip] Updating zip: /Users/[user]/[path to dir]/tideploygate/dist/local.twingob.android.tideploygate-android-0.1.zip
+</code></pre>
+
+<p>zip.metadata:</p>
+
+<p>post.dist:</p>
+
+<p>BUILD SUCCESSFUL</p>
+
+<p><code>``
+</code>dist<code>ディレクトリ以下にできたzipファイル</code>local.twingob.android.tideploygate-android-0.1.zip`をTitanium Mobileプロジェクト直下にコピーします。</p>
+
+<h3>tiapp.xmlの修正</h3>
+
+<p>moduleの指定を追加します。リモートLogCatを利用する場合は、<code>&lt;uses-permission android:name="android.permission.READ_LOGS" /&gt;</code>も記載します。
+<div><script src='https://gist.github.com/3806841.js'></script>
+<noscript><pre><code>&lt;android xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;&gt;
+    &lt;manifest&gt;
+       &lt;uses-permission android:name=&quot;android.permission.READ_LOGS&quot; /&gt;
+    &lt;/manifest&gt;
+&lt;/android&gt;
+&lt;modules&gt;
+    &lt;module version=&quot;0.1&quot;&gt;local.twingob.android.tideploygate&lt;/module&gt;
+&lt;/modules&gt;
+</code></pre></noscript></div>
+</p>
+
+<p><strong><em> 実際には、Distributeビルド（リリースビルド）の際、これらの記載は削除し、module自体もビルドに含めないように、別途ビルドスクリプトを作成しています。 </em></strong></p>
+
+<h2>さいごに</h2>
+
+<p>DeployGateとTitanium Mobileの組み合わせは、開発をさらに加速できそうですよね！今後は<a href="https://twitter.com/astronaughts">@astronaughts</a>さんに使い倒してもらいますw</p>
+]]></content>
+  </entry>
+  
+</feed>
