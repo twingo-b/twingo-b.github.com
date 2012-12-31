@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: AWS | twingo_b's blog]]></title>
+  <link href="http://twingo-b.github.com/blog/categories/aws/atom.xml" rel="self"/>
+  <link href="http://twingo-b.github.com/"/>
+  <updated>2012-12-12T21:32:18+09:00</updated>
+  <id>http://twingo-b.github.com/</id>
+  <author>
+    <name><![CDATA[@twingo_b]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[IAM roles for EC2 instancesを利用して、S3 Pre-signed URL生成／Direct Object Upload]]></title>
+    <link href="http://twingo-b.github.com/blog/2012/12/09/iam-roles-s3/"/>
+    <updated>2012-12-09T21:00:00+09:00</updated>
+    <id>http://twingo-b.github.com/blog/2012/12/09/iam-roles-s3</id>
+    <content type="html"><![CDATA[<p><a href="http://www.zusaar.com/event/451053">AWS Advent Calendar 2012</a>の９日目です。</p>
+
+<p><a href="http://aws.typepad.com/aws_japan/2012/06/iam-roles-for-ec2-instances-simplified-secure-access-to-aws-service-apis-from-ec2.html">IAM roles for EC2 instances</a>（以下IAM roles）ってご存知でしょうか？
+AWSを利用して開発していると、どうしてもAccessKeyId/SecretAccessKeyの扱いに困りますよね？</p>
+
+<p>IAM rolesを利用すると、このようにプログラムやコンフィグファイルに埋め込んでいたものが、
+```
+require_once 'AWSSDKforPHP/sdk.class.php';
+$s3 = new AmazonS3(array(</p>
+
+<pre><code>'key' =&gt; 'xxxxxx',
+'secret' =&gt; 'xxxxxx',
+</code></pre>
+
+<p>));
+<code>
+書かなくて良くなります＾＾
+</code>
+require_once 'AWSSDKforPHP/sdk.class.php';
+$s3 = new AmazonS3(array(</p>
+
+<pre><code>'default_cache_config' =&gt; '/tmp'
+</code></pre>
+
+<p>));
+```</p>
+
+<p>今回は、普段良く利用しているS3 Pre-signed URL生成／Direct Object UploadがIAM rolesでもちゃんと動くか検証しないとなーと前から思っていましたので、この機会にやってみることにしました。</p>
+
+<h3>前提条件</h3>
+
+<p>以下の環境で動作確認を行いました。</p>
+
+<ul>
+<li>Amazon Linux AMI 2012.09</li>
+<li>PHP 5.3.18</li>
+<li>php-amazon-sdk-1.5.17</li>
+</ul>
+
+
+<h3>IAM rolesの作成</h3>
+
+<p>詳細は、クラスメソッド開発ブログさんの<a href="http://dev.classmethod.jp/cloud/iam-roles-for-ec2-instances/">IAM roles for EC2 instancesって何？</a>を参照されると良いと思います。今回S3を利用する上でポイントとなる部分を説明します。</p>
+
+<p>特定のバケット以下のみアクセス権を与えたいので、Edit Permissionsで、下記のように設定しました。</p>
+
+<p>特定のバケットのみ操作を許可したい場合でも、<code>ListAllMyBuckets</code>はすべて許可しておく必要があります。<code>get_bucket_list()</code>が失敗しますので。また、特定のバケット以下のみ許可する場合に、<code>arn:aws:s3:::[bucket]</code>と<code>arn:aws:s3:::[bucket]/*</code>を両方書かないと、うまく動かなかったです＾＾；</p>
+
+<p><img src="/images/iam-roles-s3/edit_permissions.png"></p>
+
+<p>生成されたjsonはこちらになります。</p>
+
+<p><div><script src='https://gist.github.com/4244629.js'></script>
+<noscript><pre><code>{
+  &quot;Statement&quot;: [
+    {
+      &quot;Sid&quot;: &quot;Stmt1355032668784&quot;,
+      &quot;Action&quot;: [
+        &quot;s3:ListAllMyBuckets&quot;
+      ],
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Resource&quot;: [
+        &quot;arn:aws:s3:::*&quot;
+      ]
+    },
+    {
+      &quot;Sid&quot;: &quot;Stmt1355032715622&quot;,
+      &quot;Action&quot;: [
+        &quot;s3:*&quot;
+      ],
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Resource&quot;: [
+        &quot;arn:aws:s3:::test-twingob&quot;,
+        &quot;arn:aws:s3:::test-twingob/*&quot;
+      ]
+    }
+  ]
+}</code></pre></noscript></div>
+</p>
+
+<h3>EC2インスタンスの起動</h3>
+
+<p>ここもポイントだけ。<code>Launch Instance</code>時は<code>Classic Wizard</code>を選ばないと、<code>IAM Role</code>を選べなかったです。</p>
+
+<p><img src="/images/iam-roles-s3/ec2_iam_roles.png"></p>
+
+<h3>セットアップ</h3>
+
+<p>最低限、必要なものだけインストールしました。
+<code>
+sudo yum -y install php httpd php-amazon-sdk
+</code></p>
+
+<h3>S3 Pre-signed URL生成</h3>
+
+<p>ここからが本題です。</p>
+
+<p>サンプルコードはこちらです。とってもシンプルですね。
+<div><script src='https://gist.github.com/4244638.js'></script>
+<noscript><pre><code>&lt;?php
+require_once(&quot;AWSSDKforPHP/sdk.class.php&quot;);
+date_default_timezone_set(&quot;Asia/Tokyo&quot;);
+
+$bucket = &quot;test-twingob&quot;;
+$file_name = &quot;test.txt&quot;;
+$expiration_time = &quot;+1 minute&quot;;
+
+$s3 = new AmazonS3(array(
+	'default_cache_config' =&gt; '/tmp'
+));
+
+$opt = array('https' =&gt; true);
+$response = $s3-&gt;get_object_url($bucket, $file_name, $expiration_time, $opt);
+
+echo $response;
+?&gt;
+</code></pre></noscript></div>
+</p>
+
+<p>実行すると、このように1分のみ有効なURLが生成されます。
+プログラム埋め込み時は固定だった<code>AWSAccessKeyId</code>も、定期的に変更されます＾＾
+<code>
+php get_object_url.php
+https://test-twingob.s3.amazonaws.com/test.txt?AWSAccessKeyId=ASIAJQ4QZDDBS22LYMGA&amp;Expires=1355056156&amp;Signature=Zq9j1K6eG9zDjzA7uUrgIRr2i10%3D&amp;x-amz-security-token=AQoDYXdzEC0agALr%2BzwOiErKaI1Jd1kg7Ejc1zx5TpExGmaYG2VliSjiOX%2BHZ09j9397tnGlcKthKixDTUDf49tHssOxAuyLAK5vM5jjz%2BA6CM4jZUz43%2FN4BbMWI%2FnyN2Bdf96xGrkOp1puOqoXt0hk134%2BqUEySXtSFIds8S%2B4Ijn0Oa7hlaVykkhfcx6YErTOfS6mc6U3DjkxZB9P9ia6c%2FlGEFexUzNVYi1hvgxTshBHA8bi%2FMXqhLNeY5XoDJ13S4Ym8BxD0N2P0thlEMF80xb9WcRyhuFWn4xumUSbdWYAcvXbrKR9mwbeY0qeRRUzBBAwSM%2BJM4rH8X5tLQQs4OCC7bCVx0EJIJvpkYYF
+</code></p>
+
+<h3>Direct Object Upload</h3>
+
+<p>CDPの<a href="http://aws.clouddesignpattern.org/index.php/CDP:Direct_Object_Upload%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3">Direct Object Uploadパターン</a>になります。PHPで簡単に実現する方法ないかなーと思って探していたら、<a href="http://docs.amazonwebservices.com/AWSSDKforPHP/latest/index.html#m=S3BrowserUpload/generate_upload_parameters">S3BrowserUpload</a>を見つけました！自分でpolicyやsignature生成しなくても良いので、とっても便利！でも落とし穴が＾＾；</p>
+
+<p>IAM rolesでAPIを利用するときに必要な<code>x-amz-security-token</code>を自動で付与してくれないんですよね。付与しない状態で動かすと、
+<code>
+InvalidAccessKeyId
+</code>
+とエラーが出力されて、アップロードに失敗します。かなりググって悩みました。</p>
+
+<p>サンプルコードはこちらです。<code>x-amz-security-token</code>が解決できれば、すごくシンプルに書くことができました。
+<div><script src='https://gist.github.com/4244625.js'></script>
+<noscript><pre><code>&lt;?php
+require_once(&quot;AWSSDKforPHP/sdk.class.php&quot;);
+require_once 'AWSSDKforPHP/extensions/s3browserupload.class.php';
+date_default_timezone_set(&quot;Asia/Tokyo&quot;);
+
+$id       = &quot;00000001&quot;;
+$filename = $id.&quot;.txt&quot;;
+$bucket = &quot;test-twingob&quot;;
+$expiration_time = &quot;+1 minute&quot;;
+$redirect   = &quot;http://twingo-b.github.com/?id=$id&quot;;
+
+$upload = new S3BrowserUpload(array(
+	'default_cache_config' =&gt; '/tmp'
+));
+$auth_token = $upload-&gt;auth_token;
+
+// Generate the parameters for the upload.
+$html_parameters = $upload-&gt;generate_upload_parameters($bucket, $expiration_time, array(
+
+    // Set permissions to private.
+    'acl' =&gt; AmazonS3::ACL_PRIVATE,
+
+    // Set various HTTP headers on the uploaded file.
+    'Content-Disposition' =&gt; 'attachment; filename='.$filename,
+    'Content-Type' =&gt; '^text/',
+
+    // The S3 Key to upload to. ${filename} is an S3 variable that equals the name of the file being uploaded.
+    // We're also using PHP's built-in Filter extension in this example.
+    'key' =&gt; $filename,
+
+    // Where should S3 redirect to after the upload completes? The current page.
+    'success_action_redirect' =&gt; $redirect,
+
+    // Status code to send back on success. This is primarily to work around issues in Adobe® Flash®.
+    'success_action_status' =&gt; 201,
+    
+    // For IAM roles
+    'x-amz-security-token' =&gt; $auth_token
+));
+
+// Form parameters
+$form_action = &quot;http://&quot;.$html_parameters['form']['action'].&quot;/&quot;;
+$form_method = $html_parameters['form']['method'];
+$form_enctype = $html_parameters['form']['enctype'];
+
+?&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;meta http-equiv=&quot;Content-Type&quot; content=&quot;text/html; charset=utf-8&quot;/&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;form action=&quot;&lt;?php print($form_action); ?&gt;&quot;
+          method=&quot;&lt;?php print($form_method); ?&gt;&quot;
+          enctype=&quot;&lt;?php print($form_enctype); ?&gt;&quot;&gt;
+    
+        &lt;?php foreach ($html_parameters['inputs'] as $name =&gt; $value): ?&gt;
+        &lt;input type=&quot;hidden&quot; name=&quot;&lt;?php print($name); ?&gt;&quot; value=&quot;&lt;?php print($value); ?&gt;&quot;&gt;
+        &lt;?php endforeach; ?&gt;
+    
+        &lt;input type=&quot;file&quot; name=&quot;file&quot;&gt;
+        &lt;input type=&quot;submit&quot; name=&quot;upload&quot; value=&quot;Upload&quot;&gt;
+    &lt;/form&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre></noscript></div>
+</p>
+
+<p>実行すると、このようなHTMLが生成されます。このフォームも表示後1分のみ有効です。
+```
+curl http://localhost/post_object.php
+<html>
+  <head></p>
+
+<pre><code>&lt;meta http-equiv="Content-Type" content="text/html; charset=utf-8"/&gt;
+</code></pre>
+
+<p>  </head>
+  <body></p>
+
+<pre><code>&lt;form action="http://test-twingob.s3.amazonaws.com/"
+      method="POST"
+      enctype="multipart/form-data"&gt;
+
+            &lt;input type="hidden" name="AWSAccessKeyId" value="ASIAJQ4QZDDBS22LYMGA"&gt;
+            &lt;input type="hidden" name="success_action_status" value="201"&gt;
+            &lt;input type="hidden" name="acl" value="private"&gt;
+            &lt;input type="hidden" name="Content-Disposition" value="attachment; filename=00000001.txt"&gt;
+            &lt;input type="hidden" name="Content-Type" value="text/"&gt;
+            &lt;input type="hidden" name="key" value="00000001.txt"&gt;
+            &lt;input type="hidden" name="success_action_redirect" value="http://twingo-b.github.com/?id=00000001"&gt;
+            &lt;input type="hidden" name="x-amz-security-token" value="AQoDYXdzEC0agALr+zwOiErKaI1Jd1kg7Ejc1zx5TpExGmaYG2VliSjiOX+HZ09j9397tnGlcKthKixDTUDf49tHssOxAuyLAK5vM5jjz+A6CM4jZUz43/N4BbMWI/nyN2Bdf96xGrkOp1puOqoXt0hk134+qUEySXtSFIds8S+4Ijn0Oa7hlaVykkhfcx6YErTOfS6mc6U3DjkxZB9P9ia6c/lGEFexUzNVYi1hvgxTshBHA8bi/MXqhLNeY5XoDJ13S4Ym8BxD0N2P0thlEMF80xb9WcRyhuFWn4xumUSbdWYAcvXbrKR9mwbeY0qeRRUzBBAwSM+JM4rH8X5tLQQs4OCC7bCVx0EJIJvpkYYF"&gt;
+            &lt;input type="hidden" name="policy" value="eyJjb25kaXRpb25zIjpbeyJidWNrZXQiOiJ0ZXN0LXR3aW5nb2IifSx7InN1Y2Nlc3NfYWN0aW9uX3N0YXR1cyI6IjIwMSJ9LHsiYWNsIjoicHJpdmF0ZSJ9LHsiQ29udGVudC1EaXNwb3NpdGlvbiI6ImF0dGFjaG1lbnQ7IGZpbGVuYW1lPTAwMDAwMDAxLnR4dCJ9LFsic3RhcnRzLXdpdGgiLCIkQ29udGVudC1UeXBlIiwidGV4dFwvIl0seyJrZXkiOiIwMDAwMDAwMS50eHQifSx7InN1Y2Nlc3NfYWN0aW9uX3JlZGlyZWN0IjoiaHR0cDpcL1wvdHdpbmdvLWIuZ2l0aHViLmNvbVwvP2lkPTAwMDAwMDAxIn0seyJ4LWFtei1zZWN1cml0eS10b2tlbiI6IkFRb0RZWGR6RUMwYWdBTHIrendPaUVyS2FJMUpkMWtnN0VqYzF6eDVUcEV4R21hWUcyVmxpU2ppT1grSFowOWo5Mzk3dG5HbGNLdGhLaXhEVFVEZjQ5dEhzc094QXV5TEFLNXZNNWpqeitBNkNNNGpaVXo0M1wvTjRCYk1XSVwvbnlOMkJkZjk2eEdya09wMXB1T3FvWHQwaGsxMzQrcVVFeVNYdFNGSWRzOFMrNElqbjBPYTdobGFWeWtraGZjeDZZRXJUT2ZTNm1jNlUzRGpreFpCOVA5aWE2Y1wvbEdFRmV4VXpOVllpMWh2Z3hUc2hCSEE4YmlcL01YcWhMTmVZNVhvREoxM1M0WW04QnhEME4yUDB0aGxFTUY4MHhiOVdjUnlodUZXbjR4dW1VU2JkV1lBY3ZYYnJLUjltd2JlWTBxZVJSVXpCQkF3U00rSk00ckg4WDV0TFFRczRPQ0M3YkNWeDBFSklKdnBrWVlGIn1dLCJleHBpcmF0aW9uIjoiMjAxMi0xMi0wOVQxMjo1Njo1OVoifQ=="&gt;
+            &lt;input type="hidden" name="signature" value="xjyu5PRSm0mZLg5s6yvbH4FUY9I="&gt;
+
+    &lt;input type="file" name="file"&gt;
+    &lt;input type="submit" name="upload" value="Upload"&gt;
+&lt;/form&gt;
+</code></pre>
+
+<p>  </body>
+</html>
+```</p>
+
+<h3>さいごに</h3>
+
+<p>ちゃんと動いてよかった＾＾。動かなくて<code>S3BrowserUpload</code>のgithubのソースコード見てたら、authorがラスベガスのre:Inventでお会いした<a href="https://github.com/jeremeamia">Jeremy</a>さんでした。ちょっとほっこりした＾＾</p>
+]]></content>
+  </entry>
+  
+</feed>

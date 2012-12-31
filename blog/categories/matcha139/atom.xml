@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: matcha139 | twingo_b's blog]]></title>
+  <link href="http://twingo-b.github.com/blog/categories/matcha139/atom.xml" rel="self"/>
+  <link href="http://twingo-b.github.com/"/>
+  <updated>2012-12-12T21:32:18+09:00</updated>
+  <id>http://twingo-b.github.com/</id>
+  <author>
+    <name><![CDATA[@twingo_b]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[第25回まっちゃ１３９勉強会に参加してきました]]></title>
+    <link href="http://twingo-b.github.com/blog/2012/11/18/matcha139-25th/"/>
+    <updated>2012-11-18T19:10:00+09:00</updated>
+    <id>http://twingo-b.github.com/blog/2012/11/18/matcha139-25th</id>
+    <content type="html"><![CDATA[<p><a href="http://matcha139.hiemalis.org/hiki/?matcha139-25th">第25回まっちゃ１３９勉強会</a>に参加して、とても勉強になったし、今後も使いそうなのでメモ。</p>
+
+<p>Twitterのまとめは<a href="http://togetter.com/li/408532">こちら</a>。</p>
+
+<p>テーマは、「管理者のためのDNSセキュリティ勉強会」、私は到着が開始時間に全然間に合わず、鈴木常彦先生の講演から聞きました。</p>
+
+<p>DNSセキュリティの詳細は、識者のかたに解説譲るとして、、</p>
+
+<h2>浸透いうな</h2>
+
+<p>鈴木先生が啓蒙されているDNSの「浸透いうな」について、これって仕方ないのかなとずっと思ってたんですが、実はちゃんと運用できていないだけと聞いて、結構衝撃でした＾＾；</p>
+
+<p>具体的には、「<a href="http://www.e-ontap.com/dns/propagation/">浸透いうな!</a>」や「<a href="http://jprs.jp/related-info/guide/019.pdf">JPRSの資料、ＤＮＳサーバーの引っ越し</a>」を講演中にググって確認してました。</p>
+
+<p>実際に私が経験したものは、「<a href="http://www.e-ontap.com/dns/propagation/pinning.html">浸透いうな(その3):まずいNS設定</a>」の状況が起きていたんじゃないかなと。</p>
+
+<p>今後もName Serverの切替する事あるでしょうし、外部に切替を依頼するときに前提条件として理解しておけば、無用なトラブルを避けられそうです。これらの資料、社内・社外共に共有したいです。</p>
+
+<h2>共有DNSサーバーのリスク</h2>
+
+<p>こちらも身近な脅威だなと思ったのでメモ。</p>
+
+<p>「<a href="http://jprs.jp/tech/security/2012-06-22-shared-authoritative-dns-server.html">サービス運用上の問題に起因するドメイン名ハイジャックの危険性について</a>」</p>
+
+<p>これできちゃうと、メールを盗聴されたりしちゃいますよね。。今メインで利用しているAWSの<a href="http://aws.amazon.com/jp/route53/">Route53</a>は比較的安全で、約２千台のサーバーを用意することで、サブドメインのサーバーが重複しないように力技で対策しているそうです。ただし、こういうご意見もいただきました。</p>
+
+<p><img src="/images/matcha139-25th/beyonddns.png"></p>
+
+<h2>まっちゃ139の勉強会メソッド</h2>
+
+<p>懇親会からの帰りに、代表のまっちゃだいふくさんとご一緒して、勉強会に参加されている方の間で、コミュニケーションが生まれるように工夫されている点をお聞きしたのでメモ。</p>
+
+<ul>
+<li>参加者全員の自己紹介タイム、今回参加者は、７０名以上！</li>
+<li>おやつ休憩</li>
+<li>質疑応答・ディスカッション</li>
+<li>懇親会</li>
+</ul>
+
+
+<p>をスケジュールに組み込んでいるそうです。
+特に自己紹介が有効で、その後各人のバックグラウンドがわかっているので、お話しやすいとのこと。今後の勉強会開催するときに、取り入れたいなと思いました。</p>
+
+<p>以上、ぜひ次回も参加したいですー！</p>
+]]></content>
+  </entry>
+  
+</feed>
